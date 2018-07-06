@@ -11,6 +11,7 @@ dspider
 - https://github.com/mannuan/dspider/blob/master/docs/mp4/spider-cli.mp4
 - web管理界面使用视频
 - https://github.com/mannuan/dspider/blob/master/docs/mp4/spider-gui.mp4
+- 依赖于有gnome-terminal的linux系统
 
 Installation
 ------------
