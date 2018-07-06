@@ -1,0 +1,6 @@
+selenium
+pymongo
+django
+pyvirtualdisplay
+pyquery
+xmltodict
