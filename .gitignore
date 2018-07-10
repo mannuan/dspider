@@ -105,6 +105,9 @@ ENV/
 log_*.txt*
 .idea/
 
+#database
+db.sqlite3
+
 
 
 

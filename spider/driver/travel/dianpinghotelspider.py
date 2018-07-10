@@ -91,7 +91,7 @@ fl_shop2 = Fieldlist(
     Field(fieldname=FieldName.SHOP_COMMENT_NUM, css_selector='#comment > div > h2 > a > span.count', regex=r'[^\d]*'),
 )
 
-page_shop_1 = Page(name='大众点评酒店店铺列表页面', fieldlist=fl_shop1, listcssselector=ListCssSelector(list_css_selector='#poi-list > div.content-wrap > div > div.list-wrapper > div.content > ul > li'), mongodb=Mongodb(db=TravelDriver.db, collection=TravelDriver.shop_collection))
+page_shop_1 = Page(name='大众点评酒店店铺列表页面', fieldlist=fl_shop1, listcssselector=ListCssSelector(list_css_selector='#poi-list > div.content-wrap > div > div.list-wrapper > div.content > ul > li',item_start=11,item_end=12), mongodb=Mongodb(db=TravelDriver.db, collection=TravelDriver.shop_collection))
 
 page_shop_2 = Page(name='大众点评酒店店铺详情页面', fieldlist=fl_shop2, tabsetup=TabSetup(click_css_selector='div.hotel-info-ctn > div.hotel-info-main > h2 > a.hotel-name-link'),mongodb=Mongodb(db=TravelDriver.db, collection=TravelDriver.shop_collection), is_save=True)
 
@@ -109,7 +109,7 @@ def get_comment_content(self, _str):
     return PyQuery(_str).text().replace('收起评论','')
 
 fl_comment1 = Fieldlist(
-    Field(fieldname=FieldName.SHOP_NAME, css_selector='div > div.misc-info.clearfix > span.shop'),
+    Field(fieldname=FieldName.SHOP_NAME, css_selector='#review-list > div.review-list-container > div.review-list-main > div.review-list-header > h1 > a', is_isolated=True),
     Field(fieldname=FieldName.COMMENT_USER_NAME, css_selector='div > div.dper-info > a'),
     Field(fieldname=FieldName.COMMENT_TIME, css_selector='div > div.misc-info.clearfix > span.time'),
     Field(fieldname=FieldName.COMMENT_USER_RATE, css_selector='div > div.dper-info > span', attr='class', filter_func=get_rate),
@@ -127,30 +127,33 @@ class DianpingHotelSpider(TravelDriver):
         while(True):
             self.is_ready_by_proxy_ip()
             self.switch_window_by_index(index=-1)
+            self.deal_with_failure_page()
             self.until_scroll_to_center_click_by_css_selector(css_selector='#comment > div > div.comment > div.more-comment > a.dp-link')
+            time.sleep(2)
             self.switch_window_by_index(index=-1)  # 页面选择
-            print(self.driver.title)
             if '验证中心' in self.driver.title:
                 self.info_log(data='关闭验证页面!!!')
                 self.close_curr_page()
             else:
                 break
-        time.sleep(1)
-        while(True):
-            self.until_scroll_to_center_click_by_css_selector(css_selector='#review-list > div.review-list-container > div.review-list-main > div.reviews-wrapper > div.reviews-filter.clearfix > div.sort > a')
-            time.sleep(1)
-            self.is_ready_by_proxy_ip()
-            self.until_scroll_to_center_click_by_css_selector(css_selector='#review-list > div.review-list-container > div.review-list-main > div.reviews-wrapper > div.reviews-filter.clearfix > div.sort-selection-list > a')
-            time.sleep(1)
-            self.switch_window_by_index(index=-1)
-            if '验证' in self.driver.title:
-                self.driver.back()
+        # time.sleep(1)
+        # while(True):
+        #     self.until_scroll_to_center_click_by_css_selector(css_selector='#review-list > div.review-list-container > div.review-list-main > div.reviews-wrapper > div.reviews-filter.clearfix > div.sort > a')
+        #     time.sleep(1)
+        #     self.is_ready_by_proxy_ip()
+        #     self.until_scroll_to_center_click_by_css_selector(css_selector='#review-list > div.review-list-container > div.review-list-main > div.reviews-wrapper > div.reviews-filter.clearfix > div.sort-selection-list > a')
+        #     time.sleep(1)
+        #     self.switch_window_by_index(index=-1)
+        #     if '验证' in self.driver.title:#如果是验证页面
+        #         self.driver.back()
+        #     else:
+        #         break
 
     def get_shop_info(self):
         try:
             shop_data_list = self.from_page_get_data_list(page=page_shop_1)
-            nextpagesetup = NextPageCssSelectorSetup(css_selector='#review-list > div.review-list-container > div.review-list-main > div.reviews-wrapper > div.bottom-area.clearfix > div > a.NextPage',page=page_comment_1, pause_time=2, pre_pagefunc=PageFunc(func=self.more_comment), after_pagefunc=PageFunc(func=self.close_curr_page), is_proxy=True, is_refresh=True)
-            extra_pagefunc = PageFunc(func=self.get_newest_comment_data_by_css_selector, nextpagesetup=nextpagesetup, shop_name_css_selector='#poi-detail > div.container > div.base-info > div.main-detail.clearfix > div.main-detail-left > div.main-detail-left-top.clearfix > div.hotel-detail-info > div > h1')
+            nextpagesetup = NextPageCssSelectorSetup(css_selector='#review-list > div.review-list-container > div.review-list-main > div.reviews-wrapper > div.bottom-area.clearfix > div > a.NextPage',page=page_comment_1, pause_time=2, pre_pagefunc=PageFunc(func=self.more_comment), after_pagefunc=PageFunc(func=self.close_curr_page), is_refresh=True)
+            extra_pagefunc = PageFunc(func=self.get_newest_comment_data_by_css_selector, nextpagesetup=nextpagesetup, shop_name_css_selector='#poi-detail > div.container > div.base-info > div.main-detail.clearfix > div.main-detail-left > div.main-detail-left-top.clearfix > div.hotel-detail-info > div > h1', is_effective=False)
             self.from_page_add_data_to_data_list(page=page_shop_2, pre_page=page_shop_1, data_list=shop_data_list, extra_pagefunc=extra_pagefunc)
         except Exception as e:
             self.error_log(e=str(e))
@@ -169,7 +172,9 @@ class DianpingHotelSpider(TravelDriver):
         self.fast_click_first_item_page_by_partial_link_text(link_text=self.data_website)
         time.sleep(2)
         self.fast_click_first_item_page_by_partial_link_text(link_text='酒店')
-        self.until_click_no_next_page_by_css_selector(nextpagesetup=NextPageCssSelectorSetup(css_selector='#poi-list > div.content-wrap > div > div.page > a.next', main_pagefunc=PageFunc(func=self.get_shop_info)))
+        self.debug_log(data='暂停20秒......')
+        time.sleep(5)
+        self.until_click_no_next_page_by_css_selector(nextpagesetup=NextPageCssSelectorSetup(css_selector='#poi-list > div.content-wrap > div > div.page > a.next', main_pagefunc=PageFunc(func=self.get_shop_info), is_next=False))
 
     def run_spider(self):
         try:

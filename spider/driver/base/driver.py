@@ -68,7 +68,18 @@ class Driver(object):
         获得当前代理ip
         :return:
         '''
-        return re.findall(r'[\d]{1,3}.[\d]{1,3}.[\d]{1,3}.[\d]{1,3}',os.popen("tsocks wget -q -O - http://pv.sohu.com/cityjson | awk '{print $5}'").read())[0]
+        while(True):
+            try:
+                proxy_ip = re.findall(r'[\d]{1,3}.[\d]{1,3}.[\d]{1,3}.[\d]{1,3}',os.popen("tsocks wget -q -O - http://pv.sohu.com/cityjson | awk '{print $5}'").read())[0]
+                return proxy_ip
+            except Exception:
+                self.error_log('由于网络原因,获取proxy_ip出错!!!')
+            self.debug_log(data='暂停2秒....')
+            time.sleep(2)
+
+    def is_verify_page(self):
+        self.switch_window_by_index(index=-1)
+        return True in [i in self.driver.title for i in self.verify_page_title_list]
 
     def get_options(self):
         options = webdriver.ChromeOptions()
@@ -108,7 +119,7 @@ class Driver(object):
         :return:
         """
         driver = webdriver.Chrome(chrome_options=self.get_options())
-        driver.set_page_load_timeout(300)#为了安全起见,时间设置为5分钟
+        driver.set_page_load_timeout(30)
         return driver
 
     def __get_running_func__(self, level=2):
@@ -1459,13 +1470,11 @@ class Driver(object):
                 count += 1
                 curr_proxy_ip = self.get_curr_proxy_ip()#当前代理ip
                 if self.pre_proxy_ip != curr_proxy_ip and curr_proxy_ip != self.initial_proxy_ip:#如果ip改变并且不是初始ip
-                    time.sleep(1)
-                    curr_proxy_ip = self.get_curr_proxy_ip()  # 当前代理ip
-                    if self.pre_proxy_ip != curr_proxy_ip and curr_proxy_ip != self.initial_proxy_ip:  # 如果ip改变并且不是初始ip
-                        self.debug_log(data='proxy_ip由%s变为%s' % (self.pre_proxy_ip, curr_proxy_ip))
-                        self.pre_proxy_ip = curr_proxy_ip
-                        break
+                    self.debug_log(data='proxy_ip由%s变为%s' % (self.pre_proxy_ip, curr_proxy_ip))
+                    self.pre_proxy_ip = curr_proxy_ip
+                    break
                 self.warning_log(e='第%s次尝试,proxy_ip没有改变,请等待...'%count)
+                time.sleep(1)
 
     def until_click_no_next_page_by_css_selector(self, nextpagesetup:NextPageCssSelectorSetup):
         """
@@ -1478,6 +1487,7 @@ class Driver(object):
         while(True):
             count += 1
             self.info_log(data='当前翻到第%s页...' % count)
+            self.deal_with_failure_page()
             try:
                 nextpagesetup.main_pagefunc.run()
             except Exception:
@@ -1492,11 +1502,19 @@ class Driver(object):
                         break
                     except Exception:
                         pass
-                if nextpagesetup.is_proxy:
-                    self.is_ready_by_proxy_ip()
-                self.until_scroll_to_center_click_by_css_selector(css_selector=nextpagesetup.css_selector,timeout=nextpagesetup.ele_timeout)
-                if nextpagesetup.is_refresh:
-                    self.driver.refresh()
+                if self.isproxy:
+                    while(True):
+                        self.is_ready_by_proxy_ip()
+                        self.until_scroll_to_center_click_by_css_selector(css_selector=nextpagesetup.css_selector,timeout=nextpagesetup.ele_timeout)
+                        time.sleep(3)
+                        if self.is_verify_page():  # 如果这是一个验证页面
+                            self.driver.back()
+                            self.switch_window_by_index(index=-1)
+                            self.error_log(e='这是一个验证页面,后退重试!!!')
+                        else:
+                            break
+                else:
+                    self.until_scroll_to_center_click_by_css_selector(css_selector=nextpagesetup.css_selector,timeout=nextpagesetup.ele_timeout)
                 self.info_log(name='点击下一页', data='暂停%s秒...'%nextpagesetup.pause_time)
                 time.sleep(nextpagesetup.pause_time)#每一次点击完毕,刷新页面需要缓冲时间
             except Exception as e:
@@ -1523,11 +1541,19 @@ class Driver(object):
             if not nextpagesetup.is_next:  # 在调试的时候不需要下一页
                 break
             try:
-                if nextpagesetup.is_proxy:
-                    self.is_ready_by_proxy_ip()
-                self.until_scroll_to_center_click_by_partial_link_text(link_text=nextpagesetup.link_text,timeout=nextpagesetup.ele_timeout)
-                if nextpagesetup.is_refresh:
-                    self.driver.refresh()
+                if self.isproxy:
+                    while(True):
+                        self.is_ready_by_proxy_ip()
+                        self.until_scroll_to_center_click_by_partial_link_text(link_text=nextpagesetup.link_text,timeout=nextpagesetup.ele_timeout)
+                        time.sleep(3)
+                        self.switch_window_by_index(index=-1)  # 确保在当前页面
+                        if True in [i in self.driver.title for i in self.verify_page_title_list]:  # 如果这是一个验证页面
+                            self.driver.back()
+                            self.warning_log(e='这是一个验证页面,后退重试!!!')
+                        else:
+                            break
+                else:
+                    self.until_scroll_to_center_click_by_partial_link_text(link_text=nextpagesetup.link_text,timeout=nextpagesetup.ele_timeout)
                 self.info_log(name='点击下一页', data='暂停%s秒...' % nextpagesetup.pause_time)
                 time.sleep(nextpagesetup.pause_time)  # 每一次点击完毕,刷新页面需要缓冲时间
             except Exception as e:
@@ -1763,7 +1789,11 @@ class Driver(object):
             _str = self.filter_str(_str)
             _str = re.sub(field.regex, field.repl, _str)
             if field.filter_func:
-                _str = field.filter_func(self, _str)
+                try:
+                    _str = field.filter_func(self, _str)
+                except Exception as e:
+                    self.error_log(e='关键字符串字段过滤函数出错!!!')
+                    self.error_log(e=str(e))
         except Exception as e:
             self.error_log(name=field.fieldname, e=str(e), level=4)
             _str = ''
@@ -1803,7 +1833,11 @@ class Driver(object):
             _str = self.filter_str(_str)
             _str = re.sub(field.regex, field.repl, _str)
             if field.filter_func:
-                _str = field.filter_func(self, _str)
+                try:
+                    _str = field.filter_func(self, _str)
+                except Exception as e:
+                    self.error_log(e='字符串字段过滤函数出错!!!')
+                    self.error_log(e=str(e))
         except Exception as e:
             if field.is_error:
                 self.error_log(name=field.fieldname, e=str(e),level=4)
@@ -1873,7 +1907,11 @@ class Driver(object):
             _str = self.filter_str(_str)
             _str = re.sub(field.regex, field.repl, _str)
             if field.filter_func:
-                _str = field.filter_func(self, _str)
+                try:
+                    _str = field.filter_func(self, _str)
+                except Exception as e:
+                    self.error_log(e='关键字段过滤函数出错!!!')
+                    self.error_log(e=str(e))
             _int = self.filter_integer(_str)
         except Exception as e:
             if field.is_error:
@@ -1916,7 +1954,11 @@ class Driver(object):
             _str = self.filter_str(_str)
             _str = re.sub(field.regex, field.repl, _str)
             if field.filter_func:
-                _str = field.filter_func(self, _str)
+                try:
+                    _str = field.filter_func(self, _str)
+                except Exception as e:
+                    self.error_log(e='关键字段过滤函数出错!!!')
+                    self.error_log(e=str(e))
             _float = self.filter_float(_str)
         except Exception as e:
             if field.is_error:
@@ -1925,6 +1967,17 @@ class Driver(object):
         if field.is_info:
             self.info_log(name=field.fieldname, data=str(_float))
         return _float
+
+    def deal_with_failure_page(self):
+        while (True):
+            try:
+                _ = self.driver.find_elements_by_css_selector(css_selector='body')
+                break
+            except Exception:
+                self.error_log(e='页面加载失败!!!')
+                if self.isproxy:
+                    self.is_ready_by_proxy_ip()
+                self.driver.refresh()
 
     def run_new_tab_task(self, url:str, name='', try_times=15, pause_time=1, is_close_curr_window=True, pre_pagefunc=PageFunc(), main_pagefunc=PageFunc(), after_pagefunc=PageFunc()):
         """
@@ -1944,14 +1997,13 @@ class Driver(object):
             if not self.fast_new_page(url,try_times=try_times):
                 return None
             time.sleep(3)
-            self.switch_window_by_index(index=-1)  # 确保在当前页面
-            if True in [i in self.driver.title for i in self.verify_page_title_list]:  # 如果这是一个验证页面
+            if self.is_verify_page():  # 如果这是一个验证页面
                 self.close_curr_page()
                 self.warning_log(e='这是一个验证页面,关闭重试!!!')
             else:
                 break
-        self.driver.refresh()
         time.sleep(pause_time)
+        self.deal_with_failure_page()
         pre_pagefunc.run()
         data = main_pagefunc.run()
         after_pagefunc.run()
@@ -1975,19 +2027,18 @@ class Driver(object):
         """
         if not ele:
             ele = self.driver
-        self.is_ready_by_proxy_ip()
         while(True):
+            self.is_ready_by_proxy_ip()
             if not self.fast_click_page_by_css_selector(click_css_selector=click_css_selector, ele=ele, try_times=try_times):#如果页面加载失败
                 return None
             time.sleep(3)
-            self.switch_window_by_index(index=-1)#确保在当前页面
-            if True in [i in self.driver.title for i in self.verify_page_title_list]:#如果这是一个验证页面
+            if self.is_verify_page():#如果这是一个验证页面
                 self.close_curr_page()
                 self.warning_log(e='这是一个验证页面,关闭重试!!!')
             else:
                 break
-        self.driver.refresh()
         time.sleep(pause_time)
+        self.deal_with_failure_page()
         pre_pagefunc.run()#页面准备函数
         data = main_pagefunc.run()#页面主要函数
         after_pagefunc.run()
@@ -2029,15 +2080,14 @@ class Driver(object):
         try:
             elements_list = self.until_presence_of_all_elements_located_by_css_selector(css_selector=page.listcssselector.list_css_selector)
             if page.listcssselector.item_end < 0 or page.listcssselector.item_end < 0:#如果end或start小于0
-                self.error_log(e='item_end不可以小于0!!!')
-                raise ValueError
-            if page.listcssselector.item_end > 0 and page.listcssselector.item_end <= page.listcssselector.item_start:
+                self.error_log(e='item_start和item_end都不可以小于0!!!')
+                sys.exit(1)
+            if page.listcssselector.item_end > 0 and page.listcssselector.item_start > 0 and page.listcssselector.item_end < page.listcssselector.item_start:
                 self.error_log(e='item_end在设置的情况下，不可以小于item_start!!!')
-                raise ValueError
-            if page.listcssselector.item_end == 0:#表示item_end未修改
-                elements_list = elements_list[page.listcssselector.item_start:]
-            else:
-                elements_list = elements_list[page.listcssselector.item_start:page.listcssselector.item_end]
+                sys.exit(1)
+            item_start = (lambda x:0 if x == 0 else x-1)(page.listcssselector.item_start)
+            item_end = (lambda x: len(elements_list) if x == 0 else x)(page.listcssselector.item_end)
+            elements_list = elements_list[item_start:item_end]
             for each in elements_list:
                 try:
                     self.scroll_to_center(ele=each)#把每一个item移动到页面中间
@@ -2056,9 +2106,18 @@ class Driver(object):
                 except Exception:
                     self.error_log(name=page.name,e='item出错!!!')
         except Exception as e:
-            self.error_log(e=str(e))
-            self.driver.refresh()
-            self.driver.back()#如果加载页面出现验证码回退
+            self.error_log(e='列表页面找不到需要抓取的元素!!!')
+            #由于列表页面必定是一个不断点击下一页的
+            try:
+                self.driver.back()
+            except Exception:
+                self.error_log(e='没有下一页页面无法回退!!!')
+                try:
+                    self.driver.refresh()
+                except Exception:
+                    self.error_log(e='页面遇到不可预见的错误,直接退出程序,请检查!!!')
+                    self.driver.quit()
+                    sys.exit(1)
         return data_list
 
     def from_fieldlist_get_data(self, page:Page, ele=None):
@@ -2098,17 +2157,9 @@ class Driver(object):
         for field in pre_page.fieldlist:
             fieldlist_merge.append(field)
         data_list_tmp = data_list
-        data_index_list = range(len(data_list))#数据索引列表
-        if pre_page.listcssselector.item_end < 0 or pre_page.listcssselector.item_end < 0:  # 如果end或start小于0
-            self.error_log(e='item_end不可以小于0!!!')
-            raise ValueError
-        if pre_page.listcssselector.item_end > 0 and pre_page.listcssselector.item_end <= pre_page.listcssselector.item_start:
-            self.error_log(e='item_end在设置的情况下，不可以小于item_start!!!')
-            raise ValueError
-        if pre_page.listcssselector.item_end == 0:  # 表示item_end未修改
-            data_index_list = data_index_list[pre_page.listcssselector.item_start:]
-        else:
-            data_index_list = data_index_list[pre_page.listcssselector.item_start:pre_page.listcssselector.item_end]
+        item_start = (lambda x: 0 if x == 0 else x - 1)(pre_page.listcssselector.item_start)
+        item_end = (lambda x: item_start+len(data_list) if x == 0 else x)(pre_page.listcssselector.item_end)
+        data_index_list = range(item_start,item_end)#数据索引列表
         for i in data_index_list:
             if page.tabsetup.click_css_selector:
                 #注意这里拼接出完整的css selector 是为了防止元素过期
@@ -2203,7 +2254,7 @@ class Driver(object):
                           'goog:chromeOptions': {'extensions': [], 'args': [self.curr_user_agent, '--headless', 'disable-infobars']}, 'platform': 'ANY',
                           'version': ''})
 
-    def fast_get_page(self, url:str, try_times=15, min_time_to_wait=120, max_time_to_wait=180, is_max=False, is_scroll_to_bottom=True):
+    def fast_get_page(self, url:str, try_times=15, min_time_to_wait=30, max_time_to_wait=60, is_max=False, is_scroll_to_bottom=True):
         """
         打开网页快速加载页面,直到成功加载
         :param url:
@@ -2235,7 +2286,7 @@ class Driver(object):
         self.exit_for_failing_to_load_page()
         return False
 
-    def fast_new_page(self, url:str, try_times=15, min_time_to_wait=120, max_time_to_wait=180, is_scroll_to_bottom=True):
+    def fast_new_page(self, url:str, try_times=15, min_time_to_wait=30, max_time_to_wait=60, is_scroll_to_bottom=True):
         """
         新建标签页码快速加载页面
         :param url:
@@ -2263,7 +2314,7 @@ class Driver(object):
         self.error_log(e='由于网络原因,无法加载页面,直接跳过!!!', istraceback=False)
         return False
 
-    def fast_click_page_by_css_selector(self, click_css_selector:str, ele=None, try_times=15, min_time_to_wait=120, max_time_to_wait=180, is_scroll_to_bottom=True):
+    def fast_click_page_by_css_selector(self, click_css_selector:str, ele=None, try_times=15, min_time_to_wait=30, max_time_to_wait=60, is_scroll_to_bottom=True):
         """
         点击快速加载页面
         :param click_css_selector:
@@ -2293,7 +2344,7 @@ class Driver(object):
         self.error_log(e='由于网络原因,无法加载页面,直接跳过!!!', istraceback=False)
         return False
 
-    def fast_click_same_page_by_css_selector(self, click_css_selector:str, ele=None, try_times=15, min_time_to_wait=120, max_time_to_wait=180, is_scroll_to_bottom=True):
+    def fast_click_same_page_by_css_selector(self, click_css_selector:str, ele=None, try_times=15, min_time_to_wait=30, max_time_to_wait=60, is_scroll_to_bottom=True):
         """
         点击快速加载页面
         :param click_css_selector:
@@ -2324,7 +2375,7 @@ class Driver(object):
             self.driver.close()
             self.driver.switch_to.window(self.driver.window_handles[-1])
 
-    def fast_click_first_item_page_by_partial_link_text(self, link_text:str, ele=None, try_times=15, min_time_to_wait=120, max_time_to_wait=180, is_scroll_to_bottom=True):
+    def fast_click_first_item_page_by_partial_link_text(self, link_text:str, ele=None, try_times=15, min_time_to_wait=30, max_time_to_wait=60, is_scroll_to_bottom=True):
         """
         点击列表第一个元素快速加载页面
         :param link_text:

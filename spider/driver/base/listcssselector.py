@@ -6,8 +6,9 @@ class ListCssSelector(object):
 
         :param list_css_selector:
         :param item_css_selector:
-        :param item_start:从0开始
-        :param item_end:
+        :param item_start:默认为0表示未设置,从1开始计数
+        :param item_end:默认为0表示未设置,位置可以和item_start重叠
+        eg. 选取第五个和第六个可以是:item_start=5,item_end=6
         """
         self.list_css_selector = list_css_selector
         self.item_css_selector = item_css_selector

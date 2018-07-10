@@ -245,6 +245,7 @@ class Field(object):
         self.is_info = is_info
         self.is_error = is_error
         self.is_isolated = is_isolated
+        #过滤函数默认有两个参数self,_str
         self.filter_func = filter_func
 
     def __str__(self):

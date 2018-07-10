@@ -88,7 +88,7 @@ class PageFunc(object):
             print('func为空!!!')
 
 class NextPageCssSelectorSetup(object):
-    def __init__(self, css_selector:str, stop_css_selector='', ele_timeout=1, pause_time=1, is_next=True, is_proxy=False, page=Page(), pre_pagefunc=PageFunc(), main_pagefunc=PageFunc(), after_pagefunc = PageFunc(), is_refresh=False):
+    def __init__(self, css_selector:str, stop_css_selector='', ele_timeout=1, pause_time=1, is_next=True, page=Page(), pre_pagefunc=PageFunc(), main_pagefunc=PageFunc(), after_pagefunc = PageFunc(), is_refresh=False):
         """
 
         :param css_selector:
@@ -108,7 +108,6 @@ class NextPageCssSelectorSetup(object):
         self.ele_timeout = ele_timeout
         self.pause_time = pause_time
         self.is_next = is_next
-        self.is_proxy = is_proxy
         self.page = page
         self.pre_pagefunc = pre_pagefunc
         self.main_pagefunc = main_pagefunc

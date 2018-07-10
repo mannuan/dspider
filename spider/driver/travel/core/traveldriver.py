@@ -25,6 +25,12 @@ class DataSourceName(object):
     """
     SPOT = '景点'
     HOTEL = '酒店'
+    FOOD = '餐饮'
+    SHOPPING = '购物'
+    HEALTH = '健康'
+    CAR = '爱车'
+    ENTERTAINMENT = '娱乐'
+
 
 DATASOURCE_NAME_LIST = (lambda d:list({key:d[key] for key in d if '_' not in key}.values()))(vars(DataSourceName))
 
@@ -101,7 +107,7 @@ class TravelDriver(Driver):
             time_list = [i.get(FieldName.COMMENT_TIME) for i in comment_data_list]
             time_list.sort()#取出最旧的数据
             curr_time = (lambda tl:tl[0] if len(tl) >=1 else '')(time_list)#当前最新时间
-            self.debug_log(data='当前最新评论时间%s'%curr_time)
+            self.debug_log(data='当前最新评论的最旧时间是：%s'%curr_time)
             if curr_time < newest_time and is_effective:
                 self.info_log(data='当前的评论数据不是最近更新的,不用继续往下爬虫!!!')
                 raise ValueError

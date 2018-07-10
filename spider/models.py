@@ -6,7 +6,8 @@ from django.contrib.auth.models import User
 import django.utils.timezone as timezone
 
 class DataWebsite(models.Model):
-    name = models.CharField('网站来源', max_length=100, primary_key=True, editable=False)
+    # name = models.CharField('网站来源', max_length=100, primary_key=True, editable=False)
+    name = models.CharField('网站来源', max_length=100, primary_key=True)
     def __str__(self):
         return self.name
 
@@ -22,7 +23,8 @@ class DataRegion(models.Model):
         return self.name
 
 class DataSource(models.Model):
-    name = models.CharField('数据类型', max_length=100, primary_key=True, editable=False)
+    # name = models.CharField('数据类型', max_length=100, primary_key=True, editable=False)
+    name = models.CharField('数据类型', max_length=100, primary_key=True)
     def __str__(self):
         return self.name
 
