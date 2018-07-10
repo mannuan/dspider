@@ -18,6 +18,7 @@ Installation
 
 * `pip install -r requirements.txt`
 * `python manage.py migrate`
+* `python manage.py createsuperuser`
 * run command `python manage.py runserver`, visit [http://localhost:8000/spider/](http://localhost:8000/spider/)
 
 

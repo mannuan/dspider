@@ -4,6 +4,16 @@ from spider.driver.base.driver import *
 from spider.driver.base.field import FieldName
 from spider.driver.base.mongodb import Mongodb
 
+class DataRegionName(object):
+    """
+    数据区域名称
+    """
+    QIANDAOHU = '千岛湖'
+    XIHU = '西湖'
+
+
+DATAREGION_NAME_LIST = (lambda d:list({key:d[key] for key in d if '_' not in key}.values()))(vars(DataRegionName))
+
 class WebsiteName(object):
     """
     旅游网站名称
@@ -42,6 +52,11 @@ class TravelSpiderName(object):
     XIECHENG_HOTEL = WebsiteName.XIECHENG + DataSourceName.HOTEL
     DIANPING_SPOT = WebsiteName.DINGPING + DataSourceName.SPOT
     DIANPING_HOTEL = WebsiteName.DINGPING + DataSourceName.HOTEL
+    DIANPING_FOOD = WebsiteName.DINGPING + DataSourceName.FOOD
+    DIANPING_SHOPPING = WebsiteName.DINGPING + DataSourceName.SHOPPING
+    DIANPING_HEALTH = WebsiteName.DINGPING + DataSourceName.HEALTH
+    DIANPING_CAR = WebsiteName.DINGPING + DataSourceName.CAR
+    DIANPING_ENTERTAINMENT = WebsiteName.DINGPING + DataSourceName.ENTERTAINMENT
     FLIGGY_SPOT = WebsiteName.FLIGGY + DataSourceName.SPOT
     FLIGGY_HOTEL = WebsiteName.FLIGGY + DataSourceName.HOTEL
     QUNAR_SPOT = WebsiteName.QUNAR + DataSourceName.SPOT

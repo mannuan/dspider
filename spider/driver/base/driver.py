@@ -63,6 +63,10 @@ class Driver(object):
         """
         self.driver.quit()
 
+    @staticmethod
+    def get_curr_ip():
+        return re.findall(r'[\d]{1,3}.[\d]{1,3}.[\d]{1,3}.[\d]{1,3}',os.popen("tsocks wget -q -O - http://pv.sohu.com/cityjson | awk '{print $5}'").read())[0]
+
     def get_curr_proxy_ip(self):
         '''
         获得当前代理ip
