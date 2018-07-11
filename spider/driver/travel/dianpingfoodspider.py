@@ -2,7 +2,7 @@
 
 from spider.driver.base.field import Fieldlist,Field,FieldName
 from spider.driver.base.tabsetup import TabSetup
-from spider.driver.base.page import Page,NextPageCssSelectorSetup,PageFunc
+from spider.driver.base.page import Page,NextPageCssSelectorSetup,PageFunc,NextPageLinkTextSetup
 from spider.driver.base.listcssselector import ListCssSelector
 from spider.driver.base.mongodb import Mongodb
 from spider.driver.travel.core.traveldriver import TravelDriver
@@ -14,7 +14,7 @@ import random
 
 def get_shop_tag(self, _str):
     p = PyQuery(_str)
-    return json.dumps([i.text() for i in p('span').items()], ensure_ascii=False)
+    return json.dumps([i.text() for i in p('span').items()][1:], ensure_ascii=False)
 
 def get_shop_rate(self, _str):
     return str(float((int(_str)/10)))
@@ -25,6 +25,7 @@ def get_shop_recommend_dish(self, _str):
 
 fl_shop1 = Fieldlist(
     Field(fieldname=FieldName.SHOP_NAME, css_selector='div.txt > div.tit > a > h4'),
+    Field(fieldname=FieldName.SHOP_URL, css_selector='div.txt > div.tit > a', attr='href'),
     Field(fieldname=FieldName.SHOP_COMMENT_NUM, css_selector='div.txt > div.comment > a.review-num'),
     Field(fieldname=FieldName.SHOP_PRICE, css_selector='div.txt > div.comment > a.mean-price'),
     Field(fieldname=FieldName.SHOP_RATE, css_selector='div.txt > div.comment > span', attr='class', regex=r'[^\d]*', filter_func=get_shop_rate),
@@ -155,24 +156,29 @@ class DianpingFoodSpider(TravelDriver):
     def get_shop_info(self):
         try:
             shop_data_list = self.from_page_get_data_list(page=page_shop_1)
-            nextpagesetup = NextPageCssSelectorSetup(css_selector='#review-list > div.review-list-container > div.review-list-main > div.reviews-wrapper > div.bottom-area.clearfix > div > a.NextPage',page=page_comment_1, pause_time=2, pre_pagefunc=PageFunc(func=self.more_comment), after_pagefunc=PageFunc(func=self.close_curr_page), is_refresh=True)
+            nextpagesetup = NextPageCssSelectorSetup(css_selector='#review-list > div.review-list-container > div.review-list-main > div.reviews-wrapper > div.bottom-area.clearfix > div > a.NextPage',page=page_comment_1, pause_time=2, pre_pagefunc=PageFunc(func=self.more_comment), after_pagefunc=PageFunc(func=self.close_curr_page))
             extra_pagefunc = PageFunc(func=self.get_newest_comment_data_by_css_selector, nextpagesetup=nextpagesetup, shop_name_css_selector='#poi-detail > div.container > div.base-info > div.main-detail.clearfix > div.main-detail-left > div.main-detail-left-top.clearfix > div.hotel-detail-info > div > h1', is_effective=False)
             self.from_page_add_data_to_data_list(page=page_shop_2, pre_page=page_shop_1, data_list=shop_data_list, extra_pagefunc=extra_pagefunc)
         except Exception as e:
             self.error_log(e=str(e))
 
     def get_shop_info_list(self):
-        time.sleep(2)
+        def get_shop_list(subtype):
+            shop_data_list = self.from_page_get_data_list(page=page_shop_1)
+            for shop_data in shop_data_list:
+                self.save_data_to_mongodb(fieldlist=fl_shop1,mongodb=Mongodb(db=TravelDriver.db,collection=TravelDriver.shop_collection, host='10.1.17.15'),data=self.merge_dict(shop_data,subtype), external_key_name=[FieldName.SUBTYPE_NAME])
+
         self.fast_click_first_item_page_by_partial_link_text(link_text='美食')
         time.sleep(2)
         self.until_scroll_to_center_click_by_css_selector(css_selector='#J_qs-btn')
         time.sleep(2)
-        sub_type_list = []
+        subtype_list = []
         for i in self.until_presence_of_all_elements_located_by_css_selector(css_selector='#classfy > a'):
             if i.text and i.text != '更多':
-                sub_type_list.append({'name':i.text,'url':i.get_attribute('href')})
-        print(sub_type_list)
-        print(len(sub_type_list))
+                subtype_list.append({FieldName.SUBTYPE_NAME:i.text,FieldName.SUBTYPE_URL:i.get_attribute('href')})
+        for subtype in subtype_list[:1]:
+            self.fast_new_page(url=subtype.get(FieldName.SUBTYPE_URL))
+            self.until_click_no_next_page_by_partial_link_text(NextPageLinkTextSetup(link_text='下一页',is_proxy=False, main_pagefunc=PageFunc(get_shop_list, subtype=subtype)))
         # self.debug_log(data='暂停20秒......')
         # time.sleep(5)
         # self.until_click_no_next_page_by_css_selector(nextpagesetup=NextPageCssSelectorSetup(css_selector='#poi-list > div.content-wrap > div > div.page > a.next', main_pagefunc=PageFunc(func=self.get_shop_info), is_next=False))

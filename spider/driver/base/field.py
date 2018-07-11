@@ -17,6 +17,8 @@ class FieldName(object):
     DATA_REGION = 'data_region'#数据来自的景点
     DATA_SOURCE = 'data_source'#数据来自的分类
     CRAWL_TIME = 'crawl_time'#爬虫的时间
+    SUBTYPE_NAME = 'subtype_name'#子类名
+    SUBTYPE_URL = 'subtype_url'#子类的链接
 
     SHOP_NAME = 'shop_name'#店铺名
     SHOP_URL = 'shop_url'#店铺链接
@@ -147,6 +149,8 @@ FIELD_NAME_TYPE = {
 
 FIELD_NAME_ZH = {
     FieldName.CRAWL_TIME:'爬虫时间',
+    FieldName.SUBTYPE_NAME:'子类名称',
+    FieldName.SUBTYPE_URL:'子类链接',
 
     FieldName.SHOP_NAME : '店铺名称',
     FieldName.SHOP_URL : '店铺链接',

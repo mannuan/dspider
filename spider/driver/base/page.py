@@ -88,7 +88,7 @@ class PageFunc(object):
             print('func为空!!!')
 
 class NextPageCssSelectorSetup(object):
-    def __init__(self, css_selector:str, stop_css_selector='', ele_timeout=1, pause_time=1, is_next=True, page=Page(), pre_pagefunc=PageFunc(), main_pagefunc=PageFunc(), after_pagefunc = PageFunc(), is_refresh=False):
+    def __init__(self, css_selector:str, stop_css_selector='', ele_timeout=1, pause_time=1, is_next=True, is_proxy=True, page=Page(), pre_pagefunc=PageFunc(), main_pagefunc=PageFunc(), after_pagefunc = PageFunc()):
         """
 
         :param css_selector:
@@ -101,18 +101,17 @@ class NextPageCssSelectorSetup(object):
         :param pre_pagefunc:
         :param main_pagefunc:
         :param after_pagefunc:
-        :param is_refresh:
         """
         self.css_selector = css_selector
         self.stop_css_selector = stop_css_selector
         self.ele_timeout = ele_timeout
         self.pause_time = pause_time
         self.is_next = is_next
+        self.is_proxy = is_proxy
         self.page = page
         self.pre_pagefunc = pre_pagefunc
         self.main_pagefunc = main_pagefunc
         self.after_pagefunc = after_pagefunc
-        self.is_refresh = is_refresh
 
     def set_main_pagefunc(self, pagefunc:PageFunc):
         self.main_pagefunc = pagefunc
@@ -133,7 +132,7 @@ class NextPageCssSelectorSetup(object):
     #             super.__eq__(self, other)
 
 class NextPageLinkTextSetup(object):
-    def __init__(self, link_text:str, ele_timeout=1, pause_time=1, is_next=True, is_proxy=False, page=Page(), pre_pagefunc=PageFunc(), main_pagefunc=PageFunc(), after_pagefunc = PageFunc(), is_refresh=False):
+    def __init__(self, link_text:str, ele_timeout=1, pause_time=1, is_next=True, is_proxy=True, page=Page(), pre_pagefunc=PageFunc(), main_pagefunc=PageFunc(), after_pagefunc = PageFunc()):
         """
 
         :param link_text:
@@ -145,7 +144,6 @@ class NextPageLinkTextSetup(object):
         :param pre_pagefunc:
         :param main_pagefunc:
         :param after_pagefunc:
-        :param is_refresh:
         """
         self.link_text = link_text
         self.ele_timeout = ele_timeout
@@ -156,7 +154,6 @@ class NextPageLinkTextSetup(object):
         self.pre_pagefunc = pre_pagefunc
         self.main_pagefunc = main_pagefunc
         self.after_pagefunc = after_pagefunc
-        self.is_refresh = is_refresh
 
     def set_main_pagefunc(self, pagefunc:PageFunc):
         self.main_pagefunc = pagefunc

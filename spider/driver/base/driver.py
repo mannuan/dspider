@@ -1506,7 +1506,7 @@ class Driver(object):
                         break
                     except Exception:
                         pass
-                if self.isproxy:
+                if self.isproxy and nextpagesetup.is_proxy:
                     while(True):
                         self.is_ready_by_proxy_ip()
                         self.until_scroll_to_center_click_by_css_selector(css_selector=nextpagesetup.css_selector,timeout=nextpagesetup.ele_timeout)
@@ -1545,7 +1545,7 @@ class Driver(object):
             if not nextpagesetup.is_next:  # 在调试的时候不需要下一页
                 break
             try:
-                if self.isproxy:
+                if self.isproxy and nextpagesetup.is_proxy:
                     while(True):
                         self.is_ready_by_proxy_ip()
                         self.until_scroll_to_center_click_by_partial_link_text(link_text=nextpagesetup.link_text,timeout=nextpagesetup.ele_timeout)
