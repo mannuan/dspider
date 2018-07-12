@@ -50,7 +50,7 @@ def get_shop_promotion(self, _str):
     return json.dumps(promotion, ensure_ascii=False)
 
 def get_shop_menu(self, _str):
-    with open('/home/wjl/test.txt','w+') as f:
+    with open('/home/mininet/test.txt','w+') as f:
         f.write(_str)
     return ''
 
@@ -59,7 +59,7 @@ fl_shop2 = Fieldlist(
     Field(fieldname=FieldName.SHOP_PHONE, css_selector='#basic-info > p', is_focus=True, is_info=True),
     Field(fieldname=FieldName.SHOP_TIME, css_selector='#basic-info > div.other.J-other.Hide > p.info.info-indent', filter_func=get_shop_time,attr='innerHTML', is_focus=True, is_info=True),
     Field(fieldname=FieldName.SHOP_PROMOTION, css_selector='#promoinfo-wrapper', attr='innerHTML', filter_func=get_shop_promotion, is_focus=True, is_info=True),
-    Field(fieldname=FieldName.SHOP_MENU, css_selector='#shop-tabs', attr='innerHTML', filter_func=get_shop_menu, is_focus=True, is_info=True),
+    Field(fieldname=FieldName.SHOP_MENU, css_selector='#shoptabs-wrapper', attr='innerHTML', filter_func=get_shop_menu, is_focus=True, is_info=True),
     # Field(fieldname=FieldName.SHOP_STATISTICS, css_selector='#poi-detail > div.container > div.sub-content.clearfix > div.main > div.user-comment-info', attr='innerHTML', filter_func=get_shop_statistics, is_focus=True),
 )
 
@@ -121,7 +121,7 @@ class DianpingFoodSpider(TravelDriver):
 
     def get_shop_detail(self):
         shop_url_set = set()
-        for i in Mongodb(db=TravelDriver.db,collection=TravelDriver.shop_collection, host='127.0.0.1').get_collection().find(self.merge_dict(self.get_data_key(),{FieldName.SHOP_NAME:'开訫渔家'})):
+        for i in Mongodb(db=TravelDriver.db,collection=TravelDriver.shop_collection, host='10.1.17.15').get_collection().find(self.merge_dict(self.get_data_key(),{FieldName.SHOP_NAME:'开訫渔家'})):
             shop_url_set.add(i.get(FieldName.SHOP_URL))
         for url in shop_url_set:
             self.fast_new_page(url=url)
@@ -131,7 +131,7 @@ class DianpingFoodSpider(TravelDriver):
         def get_shop_list(subtype):
             shop_data_list = self.from_page_get_data_list(page=page_shop_1)
             for shop_data in shop_data_list:
-                self.save_data_to_mongodb(fieldlist=fl_shop1,mongodb=Mongodb(db=TravelDriver.db,collection=TravelDriver.shop_collection, host='127.0.0.1'),data=self.merge_dict(shop_data,subtype), external_key_name=[FieldName.SUBTYPE_NAME])
+                self.save_data_to_mongodb(fieldlist=fl_shop1,mongodb=Mongodb(db=TravelDriver.db,collection=TravelDriver.shop_collection, host='10.1.17.15'),data=self.merge_dict(shop_data,subtype), external_key_name=[FieldName.SUBTYPE_NAME])
 
         self.fast_click_first_item_page_by_partial_link_text(link_text='美食')
         time.sleep(2)
