@@ -35,66 +35,32 @@ fl_shop1 = Fieldlist(
 
 page_shop_1 = Page(name='大众点评美食店铺列表页面', fieldlist=fl_shop1, listcssselector=ListCssSelector(list_css_selector='#shop-all-list > ul > li'), mongodb=Mongodb(db=TravelDriver.db, collection=TravelDriver.shop_collection))
 
-def get_shop_room_all(self, _str):
-    p = PyQuery(_str)
-    sale_dict = {}
-    room_list = []
-    for i in p('div.hotel-rooms > div.hotel-rooms-list > div.hotel-rooms-list-cont > ul > li').items():
-        room = {'room_name': i('div.title-info.clearfix.dph-col.dph-col1 > div.title > h3').text()}
-        for j in i('div.h-item-more.h-hide').text().split('\n'):
-            room.update((lambda x: {x[0].strip(): x[1].strip()} if len(x) == 2 else {})(j.split(':')))
-        item_list = []
-        for j in i('div.roomlist > div').items():
-            item_list.append(j.text().split('\n'))
-        room.setdefault('room_list', item_list)
-        room_list.append(room)
-    sale_dict.setdefault('房型预定', room_list)
-    package_list = []
-    for i in p('div > ul.group-deal > li').items():
-        info_list = i.text().split('￥')
-        if len(info_list) == 2:
-            package_list.append({info_list[0].strip(): info_list[1].strip()})
-    sale_dict.setdefault('套餐预定', package_list)
-    return json.dumps(sale_dict, ensure_ascii=False)
+def get_shop_time(self, _str):
+    return PyQuery(_str).text()
 
-def get_shop_intro(self, _str):
+def get_shop_promotion(self, _str):
     p = PyQuery(_str)
-    info_dict = {}
-    for i in p('ul.list-info > li').items():
-        info = i.text().split('\n')
-        if len(info) == 2:
-            items = list(i('div > span').items())
-            item_list = []
-            if len(items) >= 2:
-                for j in items:
-                    item_list.append(j.text())
-                info[1] = item_list
-            info_dict.setdefault(info[0], info[1])
-    return json.dumps(info_dict, ensure_ascii=False)
+    promotion = {}
+    for i in p('div.group > div.item').items():
+        info_list = i.text().split('\n')
+        promotion.setdefault(info_list[0],info_list[1:])
+    for i in p('div.group > a').items():
+        info_list = i.text().split('\n')
+        promotion.setdefault(info_list[-1],info_list[:-1])
+    return json.dumps(promotion, ensure_ascii=False)
 
-def get_shop_statistics(self, _str):
-    p = PyQuery(_str)
-    tag_star_dict = {}
-    tags = {}
-    for i in p('div.tags > ul > li').items():
-        tags.setdefault(re.sub('[^\u4e00-\u9fa5]*', '', i.text()), re.sub('[^\d]*', '', i.text()))
-    tag_star_dict.setdefault('tags', tags)
-    stars = {}
-    for i in p('#comment > div > h2 > span > a').items():
-        star = i.text().split('星')
-        if len(star) == 2:
-            stars.setdefault(star[0], re.sub(r'[^\d]*', '', star[1]))
-    tag_star_dict.setdefault('star', stars)
-    return json.dumps(tag_star_dict, ensure_ascii=False)
+def get_shop_menu(self, _str):
+    with open('/home/wjl/test.txt','w+') as f:
+        f.write(_str)
+    return ''
 
 fl_shop2 = Fieldlist(
-    Field(fieldname=FieldName.SHOP_GRADE, css_selector='#poi-detail > div.container > div.base-info > div.main-detail.clearfix > div.main-detail-right > div.hotel-appraise > div.hotel-scope > span', pause_time=5, is_focus=True),
-    Field(fieldname=FieldName.SHOP_PHONE, css_selector='#poi-detail > div.container > div.base-info > div.main-detail.clearfix > div.main-detail-left > div.main-detail-left-top.clearfix > div.hotel-detail-info > div > div.call-info > div > span.call-number', is_focus=True),
-    Field(fieldname=FieldName.SHOP_ADDRESS, css_selector='#poi-detail > div.container > div.base-info > div.main-detail.clearfix > div.main-detail-left > div.main-detail-left-top.clearfix > div.hotel-detail-price > div.hotel-address-box.clearfix > span.hotel-address', is_focus=True),
-    Field(fieldname=FieldName.SHOP_ROOM_RECOMMEND_ALL, css_selector='#deal', attr='innerHTML', filter_func=get_shop_room_all, is_focus=True),
-    Field(fieldname=FieldName.SHOP_INTRO, css_selector='#poi-detail > div.container > div.sub-content.clearfix > div.main > div> div.hotel-info', attr='innerHTML', filter_func=get_shop_intro, is_focus=True),
-    Field(fieldname=FieldName.SHOP_STATISTICS, css_selector='#poi-detail > div.container > div.sub-content.clearfix > div.main > div.user-comment-info', attr='innerHTML', filter_func=get_shop_statistics, is_focus=True),
-    Field(fieldname=FieldName.SHOP_COMMENT_NUM, css_selector='#comment > div > h2 > a > span.count', regex=r'[^\d]*'),
+    Field(fieldname=FieldName.SHOP_ADDRESS, css_selector='#address', is_focus=True, is_info=True),
+    Field(fieldname=FieldName.SHOP_PHONE, css_selector='#basic-info > p', is_focus=True, is_info=True),
+    Field(fieldname=FieldName.SHOP_TIME, css_selector='#basic-info > div.other.J-other.Hide > p.info.info-indent', filter_func=get_shop_time,attr='innerHTML', is_focus=True, is_info=True),
+    Field(fieldname=FieldName.SHOP_PROMOTION, css_selector='#promoinfo-wrapper', attr='innerHTML', filter_func=get_shop_promotion, is_focus=True, is_info=True),
+    Field(fieldname=FieldName.SHOP_MENU, css_selector='#shop-tabs', attr='innerHTML', filter_func=get_shop_menu, is_focus=True, is_info=True),
+    # Field(fieldname=FieldName.SHOP_STATISTICS, css_selector='#poi-detail > div.container > div.sub-content.clearfix > div.main > div.user-comment-info', attr='innerHTML', filter_func=get_shop_statistics, is_focus=True),
 )
 
 page_shop_2 = Page(name='大众点评酒店店铺详情页面', fieldlist=fl_shop2, tabsetup=TabSetup(click_css_selector='div.hotel-info-ctn > div.hotel-info-main > h2 > a.hotel-name-link'),mongodb=Mongodb(db=TravelDriver.db, collection=TravelDriver.shop_collection), is_save=True)
@@ -153,20 +119,19 @@ class DianpingFoodSpider(TravelDriver):
         #     else:
         #         break
 
-    def get_shop_info(self):
-        try:
-            shop_data_list = self.from_page_get_data_list(page=page_shop_1)
-            nextpagesetup = NextPageCssSelectorSetup(css_selector='#review-list > div.review-list-container > div.review-list-main > div.reviews-wrapper > div.bottom-area.clearfix > div > a.NextPage',page=page_comment_1, pause_time=2, pre_pagefunc=PageFunc(func=self.more_comment), after_pagefunc=PageFunc(func=self.close_curr_page))
-            extra_pagefunc = PageFunc(func=self.get_newest_comment_data_by_css_selector, nextpagesetup=nextpagesetup, shop_name_css_selector='#poi-detail > div.container > div.base-info > div.main-detail.clearfix > div.main-detail-left > div.main-detail-left-top.clearfix > div.hotel-detail-info > div > h1', is_effective=False)
-            self.from_page_add_data_to_data_list(page=page_shop_2, pre_page=page_shop_1, data_list=shop_data_list, extra_pagefunc=extra_pagefunc)
-        except Exception as e:
-            self.error_log(e=str(e))
+    def get_shop_detail(self):
+        shop_url_set = set()
+        for i in Mongodb(db=TravelDriver.db,collection=TravelDriver.shop_collection, host='127.0.0.1').get_collection().find(self.merge_dict(self.get_data_key(),{FieldName.SHOP_NAME:'开訫渔家'})):
+            shop_url_set.add(i.get(FieldName.SHOP_URL))
+        for url in shop_url_set:
+            self.fast_new_page(url=url)
+            self.from_fieldlist_get_data(page=page_shop_2)
 
     def get_shop_info_list(self):
         def get_shop_list(subtype):
             shop_data_list = self.from_page_get_data_list(page=page_shop_1)
             for shop_data in shop_data_list:
-                self.save_data_to_mongodb(fieldlist=fl_shop1,mongodb=Mongodb(db=TravelDriver.db,collection=TravelDriver.shop_collection, host='10.1.17.15'),data=self.merge_dict(shop_data,subtype), external_key_name=[FieldName.SUBTYPE_NAME])
+                self.save_data_to_mongodb(fieldlist=fl_shop1,mongodb=Mongodb(db=TravelDriver.db,collection=TravelDriver.shop_collection, host='127.0.0.1'),data=self.merge_dict(shop_data,subtype), external_key_name=[FieldName.SUBTYPE_NAME])
 
         self.fast_click_first_item_page_by_partial_link_text(link_text='美食')
         time.sleep(2)
@@ -176,13 +141,10 @@ class DianpingFoodSpider(TravelDriver):
         for i in self.until_presence_of_all_elements_located_by_css_selector(css_selector='#classfy > a'):
             if i.text and i.text != '更多':
                 subtype_list.append({FieldName.SUBTYPE_NAME:i.text,FieldName.SUBTYPE_URL:i.get_attribute('href')})
-        for subtype in subtype_list[:1]:
+        for subtype in subtype_list:
             self.fast_new_page(url=subtype.get(FieldName.SUBTYPE_URL))
             self.until_click_no_next_page_by_partial_link_text(NextPageLinkTextSetup(link_text='下一页',is_proxy=False, main_pagefunc=PageFunc(get_shop_list, subtype=subtype)))
-        # self.debug_log(data='暂停20秒......')
-        # time.sleep(5)
-        # self.until_click_no_next_page_by_css_selector(nextpagesetup=NextPageCssSelectorSetup(css_selector='#poi-list > div.content-wrap > div > div.page > a.next', main_pagefunc=PageFunc(func=self.get_shop_info), is_next=False))
-        time.sleep(1000)
+            self.close_curr_page()
 
     def login(self):
         self.fast_get_page(url='https://www.baidu.com')
@@ -200,6 +162,7 @@ class DianpingFoodSpider(TravelDriver):
     def run_spider(self):
         try:
             self.login()
-            self.get_shop_info_list()
+            # self.get_shop_info_list()
+            self.get_shop_detail()
         except Exception as e:
             self.error_log(e=str(e))

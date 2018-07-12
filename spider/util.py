@@ -19,18 +19,11 @@ def ProjectStatistics():
     """
     project_statistics_data = '\"<ul>'
     predict_comment_count_sum = 0
-    for website in WEBSITE_NAME_LIST:
-        comment_sum = 0
-        for shop in shops_collection.find({FieldName.DATA_WEBSITE:website,FieldName.DATA_SOURCE:DataSourceName.SPOT}):
-            comment_sum += shop.get(FieldName.SHOP_COMMENT_NUM)
-            predict_comment_count_sum += shop.get(FieldName.SHOP_COMMENT_NUM)
-        comment_sum = 0
-        for shop in shops_collection.find({FieldName.DATA_WEBSITE: website, FieldName.DATA_SOURCE: DataSourceName.HOTEL}):
-            comment_sum += shop.get(FieldName.SHOP_COMMENT_NUM)
-            predict_comment_count_sum += shop.get(FieldName.SHOP_COMMENT_NUM)
-    project_statistics_data += '<li>所有平台店铺:%s家</li>' % (shops_collection.count())
-    project_statistics_data += '<li>所有平台评论:%s条</li>'%(comments_collection.count())
-    project_statistics_data += '<li>所有平台预计评论:%s条</li>' % (predict_comment_count_sum)
+    for shop in shops_collection.find():
+        predict_comment_count_sum += shop.get(FieldName.SHOP_COMMENT_NUM)
+    project_statistics_data += '<li>店铺:%s家</li>' % (shops_collection.count())
+    project_statistics_data += '<li>实际评论:%s条</li>'%(comments_collection.count())
+    project_statistics_data += '<li>预计评论:%s条</li>' % (predict_comment_count_sum)
     project_statistics_data += '</ul>\"'
     return project_statistics_data
 

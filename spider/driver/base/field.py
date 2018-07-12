@@ -57,6 +57,8 @@ class FieldName(object):
     SHOP_RESERVE = 'shop_reserve'#店铺预定
     SHOP_INFO = 'shop_info'#店铺信息
     SHOP_RECOMMEND_DISH = 'shop_recommend_dish'#推荐菜品
+    SHOP_PROMOTION = 'shop_promotion'#优惠促销
+    SHOP_MENU = 'shop_menu'#店铺菜单
 
     COMMENT_USER_NAME = 'comment_user_name'#评论者的名字
     COMMENT_USER_ID = 'comment_user_id'#评论者的编号
@@ -121,6 +123,8 @@ FIELD_NAME_TYPE = {
     FieldName.SHOP_RESERVE : FieldType.STR,
     FieldName.SHOP_INFO : FieldType.STR,
     FieldName.SHOP_RECOMMEND_DISH : FieldType.STR,
+    FieldName.SHOP_PROMOTION : FieldType.STR,
+    FieldName.SHOP_MENU : FieldType.STR,
 
     FieldName.COMMENT_USER_NAME : FieldType.KEY_STR,
     FieldName.COMMENT_TIME : FieldType.KEY_STR,
@@ -188,7 +192,9 @@ FIELD_NAME_ZH = {
     FieldName.SHOP_TICKET : '店铺门票',
     FieldName.SHOP_RESERVE : '店铺预定',
     FieldName.SHOP_INFO : '店铺信息',
-    FieldName.SHOP_RECOMMEND_DISH : '推荐菜品',
+    FieldName.SHOP_RECOMMEND_DISH : '推荐餐饮',
+    FieldName.SHOP_PROMOTION : '优惠促销',
+    FieldName.SHOP_MENU : '店铺菜单',
 
     FieldName.COMMENT_USER_NAME : '用户名称',
     FieldName.COMMENT_USER_ID : '用户编号',

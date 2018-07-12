@@ -222,7 +222,8 @@ class Driver(object):
         try:
             self.driver.execute_script(self.scroll_to_center_js_script, self.until_presence_of_element_located_by_css_selector(ele=ele, css_selector=css_selector, timeout=timeout))
         except Exception:
-            self.error_log(e='由于元素不存在,滚动元素到页面中间出错!!!',istraceback=False)
+            pass
+            # self.error_log(e='由于元素不存在,滚动元素到页面中间出错!!!',istraceback=False)
 
     def until_scroll_to_center_by_partial_link_text(self, link_text:str, ele=None, timeout=10):
         '''
@@ -236,7 +237,8 @@ class Driver(object):
         try:
             self.driver.execute_script(self.scroll_to_center_js_script, self.until_presence_of_element_located_by_partial_link_text(ele=ele, link_text=link_text, timeout=timeout))
         except Exception:
-            self.error_log(e='由于元素不存在,滚动元素到页面中间出错!!!',istraceback=False)
+            pass
+            # self.error_log(e='由于元素不存在,滚动元素到页面中间出错!!!',istraceback=False)
 
     def until_scroll_to_center_by_link_text(self, link_text:str, ele=None, timeout=10):
         '''
