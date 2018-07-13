@@ -1707,7 +1707,10 @@ class Driver(object):
         if len(list(collection_curr.find(key))) == 0:
             collection_curr.insert(data)
         else:
-            collection_curr.update(key, {'$set': data})
+            collection_curr.update_many(key, {'$set': data})
+
+    def update_data_to_mongodb(self, collection:Collection, key:dict, data:dict):
+        collection.update_many(key, {'$set': data})
 
     def merge_dict(self,data1,data2):
         """
@@ -1799,7 +1802,6 @@ class Driver(object):
                     _str = field.filter_func(self, _str)
                 except Exception as e:
                     self.error_log(e='关键字符串字段过滤函数出错!!!')
-                    self.error_log(e=str(e))
         except Exception as e:
             self.error_log(name=field.fieldname, e=str(e), level=4)
             _str = ''
@@ -1843,7 +1845,6 @@ class Driver(object):
                     _str = field.filter_func(self, _str)
                 except Exception as e:
                     self.error_log(e='字符串字段过滤函数出错!!!')
-                    self.error_log(e=str(e))
         except Exception as e:
             if field.is_error:
                 self.error_log(name=field.fieldname, e=str(e),level=4)
@@ -1916,8 +1917,7 @@ class Driver(object):
                 try:
                     _str = field.filter_func(self, _str)
                 except Exception as e:
-                    self.error_log(e='关键字段过滤函数出错!!!')
-                    self.error_log(e=str(e))
+                    self.error_log(e='整型字段过滤函数出错!!!')
             _int = self.filter_integer(_str)
         except Exception as e:
             if field.is_error:
@@ -1963,8 +1963,7 @@ class Driver(object):
                 try:
                     _str = field.filter_func(self, _str)
                 except Exception as e:
-                    self.error_log(e='关键字段过滤函数出错!!!')
-                    self.error_log(e=str(e))
+                    self.error_log(e='浮点数字段过滤函数出错!!!')
             _float = self.filter_float(_str)
         except Exception as e:
             if field.is_error:

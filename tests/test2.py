@@ -1,34 +1,13 @@
 #使用pickle模块将数据对象保存到文件
 
-import pickle
+from spider.driver.base.mongodb import Mongodb
 
-da = {'a': [1, 2.0, 3, 4+6j],
-         'b': ('string', u'Unicode string'),
-         'c': None}
-
-selfref_list = [1, 2, 3]
-selfref_list.append(selfref_list)
-
-output = open('/home/wjl/data.pkl', 'wb')
-
-# Pickle dictionary using protocol 0.
-pickle.dump(da, output)
-
-# Pickle the list using the highest protocol available.
-pickle.dump(selfref_list, output, -1)
-
-output.close()
-
-#使用pickle模块从文件中重构python对象
-
-import pprint, pickle
-
-pkl_file = open('/home/wjl/data.pkl', 'rb')
-
-data1 = pickle.load(pkl_file)
-pprint.pprint(data1)
-
-data2 = pickle.load(pkl_file)
-pprint.pprint(data2)
-
-pkl_file.close()
+shop_collection = Mongodb(db='dspider2',collection='shops', host='10.1.17.15').get_collection()
+count = 0
+for i in shop_collection.find({'data_website':'大众点评','data_region':'千岛湖','data_source':'餐饮'}):
+    if len(i.keys()) < 21:
+        count += 1
+    elif len(i.get('shop_address').replace(' ','')) < 8 and i.get('shop_address'):
+        count += 1
+        print(i.get('shop_address'))
+print(count)
