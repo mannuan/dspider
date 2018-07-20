@@ -12,6 +12,7 @@ class FieldName(object):
     NONE = None
     SHOP_ELE = 'shop_ele'  # 店铺页面元素
     ID_ = '_id'#mongodb的默认id
+    SUM = 'sum'#求和
 
     DATA_WEBSITE = 'data_website'#数据的来自的网站
     DATA_REGION = 'data_region'#数据来自的景点
@@ -20,6 +21,7 @@ class FieldName(object):
     SUBTYPE_NAME = 'subtype_name'#子类名
     SUBTYPE_URL = 'subtype_url'#子类的链接
 
+    SHOP_COMMENT_NUM_SUM = 'shop_comment_num_sum'#店铺评论数目求和
     SHOP_NAME = 'shop_name'#店铺名
     SHOP_URL = 'shop_url'#店铺链接
     SHOP_CURR_URL = 'shop_curr_url'#实时链接

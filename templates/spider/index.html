@@ -32,6 +32,7 @@
 
     <link rel="stylesheet" href="{% static 'spider/bower_components/bootstrap-toggle/css/bootstrap-toggle.min.css' %}">
     <link rel="stylesheet" href="{% static 'spider/css/index.min.css' %}">
+    <link rel="stylesheet" href="{% static 'spider/dist/css/buttons.css' %}">
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -39,7 +40,6 @@
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
-
 </head>
 
 <body>
@@ -97,7 +97,9 @@
                                           <span>{{ project.editor }}</span>
                                         </td>
                                         <td class="project-progress progress-all">
-                                            <span>{{ project.statistics }}</span>
+                                            <span id="project_statistics_{{ project.id }}">{{ project.statistics }}</span>
+{#                                            <button class="btn-circle" style="background: none; outline:0 none !important; blr:expression(this.onFocus=this.blur()); " title="刷新统计数据" onclick="refresh_project_statistics({{ project.id }})">↻</button>#}
+                                            <button class="button button-small button-glow button-border button-rounded button-primary button-circle", title="刷新统计数据" onclick="refresh_project_statistics({{ project.id }})">↻</button>
                                         </td>
                                         <td class="project-actions" >
                                           <a class="btn btn-default btn-group-xs" target="_blank" href="/spider/runningresults?id={{ project.id }}">查看运行结果</a>
@@ -162,13 +164,13 @@
              data: { status: project_status,id:id },
              dataType: "json",
              success: function(data){
-                 {#console.log(data)#}
+                 console.log(data)
               }
             });
         }
         $(function() {
             $("[data-toggle='popover-error']").each(function() {
-                var element = $(this);
+                let element = $(this);
                 element.popover({
                     trigger: 'manual',
                     html: true,
@@ -176,48 +178,49 @@
                     placement: 'bottom',
                     content: {{ project_health_data |safe }}
                 }).on("mouseenter", function() {
-                    var _this = this;
+                    let _this = this;
                     $(this).popover("show");
                     $(this).siblings(".popover").on("mouseleave", function() {
                         $(_this).popover('hide');
                     });
                 }).on("mouseleave", function() {
-                    var _this = this;
+                    let _this = this;
                     setTimeout(function() {
                         if(!$(".popover:hover").length) {
                             $(_this).popover("hide")
                         }
                     }, 100);
                 });
-
             });
             $("[data-toggle='popover-success']").each(function() {
-                var element = $(this);
+                let element = $(this);
                 element.popover({
                     trigger: 'manual',
                     html: true,
                     title: '爬虫数据统计',
                     placement: 'bottom',
-                    content: {{ project_statistics_data | safe }}
+                    content: {{ project_statistics_data |safe }},
                 }).on("mouseenter", function() {
-                    var _this = this;
+                    let _this = this;
                     $(this).popover("show");
                     $(this).siblings(".popover").on("mouseleave", function() {
                         $(_this).popover('hide');
                     });
                 }).on("mouseleave", function() {
-                    var _this = this;
+                    let _this = this;
                     setTimeout(function() {
                         if(!$(".popover:hover").length) {
                             $(_this).popover("hide")
                         }
                     }, 100);
                 });
-
             });
-
         });
-        setTimeout(function(){location.reload()},300000); //指定1秒刷新一次
+        function refresh_project_statistics(project_id) {
+            $.get("/spider/statistics",{'id':project_id}, function(ret){
+                $("#project_statistics_"+project_id).html(ret);
+            })
+        }
     </script>
 
 </body>

@@ -45,6 +45,37 @@ def Status(request):
         StopProject(project)
     return HttpResponse(PROJECT_SUCCESS)
 
+def GlobalStatistics(request):
+    """
+    全局统计信息
+    :param request:
+    :return:
+    """
+    return HttpResponse(ProjectStatistics())
+
+def Statistics(request):
+    """
+    项目状态
+    :param request:
+    :return:
+    """
+    id = request.GET['id']
+    project = Project.objects.get(id=id)
+    shop_count = shops_collection.find({FieldName.DATA_WEBSITE:str(project.data_website), FieldName.DATA_REGION: str(project.data_region), FieldName.DATA_SOURCE:str(project.data_source)}).count()
+    comment_count = comments_collection.find({FieldName.DATA_WEBSITE: str(project.data_website), FieldName.DATA_REGION: str(project.data_region), FieldName.DATA_SOURCE: str(project.data_source)}).count()
+    try:
+        predict_comment_count = shops_collection.aggregate([{'$match':{FieldName.DATA_WEBSITE: str(project.data_website), FieldName.DATA_REGION: str(project.data_region), FieldName.DATA_SOURCE: str(project.data_source)}}, {'$group':{FieldName.ID_:None,FieldName.SHOP_COMMENT_NUM_SUM:{'$sum':'$%s'%FieldName.SHOP_COMMENT_NUM}}}]).next().get(FieldName.SHOP_COMMENT_NUM_SUM)
+    except Exception:
+        predict_comment_count = 0
+    curr_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
+    comment_count_today = comments_collection.find({FieldName.DATA_WEBSITE:str(project.data_website), FieldName.DATA_REGION: str(project.data_region), FieldName.DATA_SOURCE:str(project.data_source), FieldName.CRAWL_TIME:{'$regex':curr_date}}).count()
+    week_start = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() - 7 * 24 * 3600))
+    comment_count_week = comments_collection.find({FieldName.DATA_WEBSITE:str(project.data_website), FieldName.DATA_REGION: str(project.data_region), FieldName.DATA_SOURCE:str(project.data_source), FieldName.CRAWL_TIME:{'$gt':week_start}}).count()
+    month_start = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()-30*24*3600))
+    comment_count_month = comments_collection.find({FieldName.DATA_WEBSITE:str(project.data_website), FieldName.DATA_REGION: str(project.data_region), FieldName.DATA_SOURCE:str(project.data_source), FieldName.CRAWL_TIME:{'$gt':month_start}}).count()
+    result = '店铺:%6s家 评论:%6s条 剩余:%6s条 爬取率:%.2f%% 今日:%6s条 本周:%6s条 本月:%s条'%(shop_count,comment_count,predict_comment_count-comment_count,(lambda x:0 if x==0 else comment_count/x)(float(predict_comment_count))*100, comment_count_today, comment_count_week, comment_count_month)
+    return HttpResponse(result)
+
 def RunningResults(request):
     """
     运行结果
@@ -142,12 +173,12 @@ def CommentsResults(request):
         comment_data.pop(FieldName.DATA_WEBSITE)
         comment_data.pop(FieldName.DATA_REGION)
         comment_data.pop(FieldName.DATA_SOURCE)
-        comment_data.pop(FieldName.SHOP_NAME)
+        # comment_data.pop(FieldName.SHOP_NAME)
         thead_list.extend(comment_data.keys())
     thead_list = list(set(thead_list))
-    for thead in thead_list:
-        if 'shop' in thead:
-            thead_list.remove(thead)
+    # for thead in thead_list:
+    #     if 'shop' in thead:
+    #         thead_list.remove(thead)
     for comment_data in comments_data_list:
         td_list = list()
         for key in thead_list:

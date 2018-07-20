@@ -35,38 +35,12 @@ def GetProjectdictList(project_list):
     """
     project_dict_list = []
     for project in project_list:
-        shop_count = shops_collection.find({FieldName.DATA_WEBSITE:str(project.data_website),
-                                              FieldName.DATA_REGION: str(project.data_region),
-                                              FieldName.DATA_SOURCE:str(project.data_source)}).count()
-        comment_count = comments_collection.find({FieldName.DATA_WEBSITE: str(project.data_website),
-                                                      FieldName.DATA_REGION: str(project.data_region),
-                                                      FieldName.DATA_SOURCE: str(project.data_source)}).count()
-        predict_comment_count = 0
-        for shop in shops_collection.find({FieldName.DATA_WEBSITE: str(project.data_website),
-                                                      FieldName.DATA_REGION: str(project.data_region),
-                                                      FieldName.DATA_SOURCE: str(project.data_source)}):
-            predict_comment_count += shop.get(FieldName.SHOP_COMMENT_NUM)
-        curr_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-        comment_count_today = 0
-        week_start = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time() - 7 * 24 * 3600))
-        comment_count_week = 0
-        month_start = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()-30*24*3600))
-        comment_count_month = 0
-        for i in comments_collection.find({FieldName.DATA_WEBSITE: str(project.data_website),
-                                                      FieldName.DATA_REGION: str(project.data_region),
-                                                      FieldName.DATA_SOURCE: str(project.data_source)}):
-            if curr_date in i.get(FieldName.CRAWL_TIME):
-                comment_count_today += 1
-            if i.get(FieldName.CRAWL_TIME) >= week_start:
-                comment_count_week += 1
-            if i.get(FieldName.CRAWL_TIME) >= month_start:
-                comment_count_month += 1
         project_dict = {
             'id':project.id,
             'name':'%s-%s-%s'%(project.data_website,project.data_region,project.data_source),
             'status':project.status,
             'editor':project.editor,
-            'statistics':'店铺:%6s家 评论:%6s条 剩余:%6s条 爬取率:%.2f%% 今日:%6s条 本周:%6s条 本月:%s条'%(shop_count,comment_count,predict_comment_count-comment_count,(lambda x:0 if x==0 else comment_count/x)(float(predict_comment_count))*100, comment_count_today, comment_count_week, comment_count_month)
+            'statistics':'店铺: ?家 评论: ?条 剩余: ?条 爬取率: ?% 今日: ?条 本周: ?条 本月: ?条'
         }
         project_dict_list.append(project_dict)
     return project_dict_list

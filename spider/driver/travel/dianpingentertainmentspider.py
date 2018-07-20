@@ -36,7 +36,7 @@ fl_shop1 = Fieldlist(
     Field(fieldname=FieldName.SHOP_ADDRESS, css_selector='div.txt > div.tag-addr > span.addr')
 )
 
-page_shop_1 = Page(name='大众点评景点店铺列表页面', fieldlist=fl_shop1, listcssselector=ListCssSelector(list_css_selector='#shop-all-list > ul > li'), mongodb=Mongodb(db=TravelDriver.db, collection=TravelDriver.shop_collection), is_save=True)
+page_shop_1 = Page(name='大众点评娱乐店铺列表页面', fieldlist=fl_shop1, listcssselector=ListCssSelector(list_css_selector='#shop-all-list > ul > li'), mongodb=Mongodb(db=TravelDriver.db, collection=TravelDriver.shop_collection), is_save=True)
 
 def get_shop_time(self, _str):
     try:
@@ -118,7 +118,7 @@ fl_shop2 = Fieldlist(
     Field(fieldname=FieldName.SHOP_COMMENT_URL, css_selector='#morelink-wrapper > p > a', attr='href', is_focus=True, is_info=True),
 )
 
-page_shop_2 = Page(name='大众点评景点店铺详情页面', fieldlist=fl_shop2)
+page_shop_2 = Page(name='大众点评娱乐店铺详情页面', fieldlist=fl_shop2)
 
 def get_rate(self, _str):
     try:
@@ -152,9 +152,9 @@ Field(fieldname=FieldName.SHOP_URL, css_selector='#review-list > div.review-list
     Field(fieldname=FieldName.COMMENT_PIC_LIST, list_css_selector='div.main-review > div.review-pictures > ul', item_css_selector='li > a > img', attr='src', timeout=0),
 )
 
-page_comment_1 = Page(name='大众点评景点评论列表', fieldlist=fl_comment1, listcssselector=ListCssSelector(list_css_selector='#review-list > div.review-list-container > div.review-list-main > div.reviews-wrapper > div.reviews-items > ul > li'), mongodb=Mongodb(db=TravelDriver.db, collection=TravelDriver.comments_collection), is_save=True)
+page_comment_1 = Page(name='大众点评娱乐评论列表', fieldlist=fl_comment1, listcssselector=ListCssSelector(list_css_selector='#review-list > div.review-list-container > div.review-list-main > div.reviews-wrapper > div.reviews-items > ul > li'), mongodb=Mongodb(db=TravelDriver.db, collection=TravelDriver.comments_collection), is_save=True)
 
-class DianpingSpotSpider(TravelDriver):
+class DianpingEntertainmentSpider(TravelDriver):
 
     def more_comment(self):
         while(True):
@@ -187,7 +187,7 @@ class DianpingSpotSpider(TravelDriver):
                                   host='10.1.17.15').get_collection()
         shop_name_url_list = list()
         for i in shop_collcetion.find(self.get_data_key()):
-            if i.get('shop_comment_url'):
+            if i.get('shop_comment_url') and i.get('shop_comment_url') in ['http://www.dianping.com/shop/32645220/review_all','http://www.dianping.com/shop/83129487/review_all']:
                 shop_name_url_list.append((i.get('shop_name'),i.get('shop_comment_url')))
         for i in range(len(shop_name_url_list)):
             self.info_log(data='第%s个,%s'%(i+1, shop_name_url_list[i][0]))
@@ -203,6 +203,7 @@ class DianpingSpotSpider(TravelDriver):
                     self.close_curr_page()
                 else:
                     break
+            time.sleep(10)
             self.until_click_no_next_page_by_partial_link_text(nextpagesetup=NextPageLinkTextSetup(link_text='下一页', main_pagefunc=PageFunc(func=self.from_page_get_data_list, page=page_comment_1)))
             self.close_curr_page()
 
@@ -232,7 +233,20 @@ class DianpingSpotSpider(TravelDriver):
             self.close_curr_page()
 
     def get_shop_info_list(self):
-        self.fast_click_first_item_page_by_partial_link_text(link_text='周边游')
+        self.fast_click_first_item_page_by_partial_link_text(link_text='休闲娱乐')
+        time.sleep(2)
+        while (True):
+            self.is_ready_by_proxy_ip()
+            self.switch_window_by_index(index=-1)
+            self.deal_with_failure_page()
+            self.until_scroll_to_center_click_by_css_selector(css_selector='#J_qs-btn')
+            time.sleep(1)
+            self.switch_window_by_index(index=-1)  # 页面选择
+            if '验证中心' in self.driver.title:
+                self.info_log(data='关闭验证页面!!!')
+                self.close_curr_page()
+            else:
+                break
         time.sleep(2)
         self.until_click_no_next_page_by_partial_link_text(NextPageLinkTextSetup(link_text='下一页',is_proxy=False, main_pagefunc=PageFunc(self.from_page_get_data_list, page=page_shop_1)))
 

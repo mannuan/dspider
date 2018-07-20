@@ -152,7 +152,7 @@ class DianpingHotelSpider(TravelDriver):
     def get_shop_info(self):
         try:
             shop_data_list = self.from_page_get_data_list(page=page_shop_1)
-            nextpagesetup = NextPageCssSelectorSetup(css_selector='#review-list > div.review-list-container > div.review-list-main > div.reviews-wrapper > div.bottom-area.clearfix > div > a.NextPage',page=page_comment_1, pause_time=2, pre_pagefunc=PageFunc(func=self.more_comment), after_pagefunc=PageFunc(func=self.close_curr_page), is_refresh=True)
+            nextpagesetup = NextPageCssSelectorSetup(css_selector='#review-list > div.review-list-container > div.review-list-main > div.reviews-wrapper > div.bottom-area.clearfix > div > a.NextPage',page=page_comment_1, pause_time=2, pre_pagefunc=PageFunc(func=self.more_comment), after_pagefunc=PageFunc(func=self.close_curr_page))
             extra_pagefunc = PageFunc(func=self.get_newest_comment_data_by_css_selector, nextpagesetup=nextpagesetup, shop_name_css_selector='#poi-detail > div.container > div.base-info > div.main-detail.clearfix > div.main-detail-left > div.main-detail-left-top.clearfix > div.hotel-detail-info > div > h1', is_effective=False)
             self.from_page_add_data_to_data_list(page=page_shop_2, pre_page=page_shop_1, data_list=shop_data_list, extra_pagefunc=extra_pagefunc)
         except Exception as e:
