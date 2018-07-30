@@ -70,7 +70,7 @@ class TravelSpiderName(object):
     ELONG_HOTEL = WebsiteName.ELONG + DataSourceName.HOTEL
 
 class TravelDriver(Driver):
-    host = '127.0.0.1'
+    host = '10.1.17.15'
     port = 27017
     db = 'dspider2'
     shop_collection = 'shops'
