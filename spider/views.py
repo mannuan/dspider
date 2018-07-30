@@ -64,7 +64,7 @@ def Statistics(request):
     shop_count = shops_collection.find({FieldName.DATA_WEBSITE:str(project.data_website), FieldName.DATA_REGION: str(project.data_region), FieldName.DATA_SOURCE:str(project.data_source)}).count()
     comment_count = comments_collection.find({FieldName.DATA_WEBSITE: str(project.data_website), FieldName.DATA_REGION: str(project.data_region), FieldName.DATA_SOURCE: str(project.data_source)}).count()
     try:
-        predict_comment_count = shops_collection.aggregate([{'$match':{FieldName.DATA_WEBSITE: str(project.data_website), FieldName.DATA_REGION: str(project.data_region), FieldName.DATA_SOURCE: str(project.data_source)}}, {'$group':{FieldName.ID_:None,FieldName.SHOP_COMMENT_NUM_SUM:{'$sum':'$%s'%FieldName.SHOP_COMMENT_NUM}}}]).next().get(FieldName.SHOP_COMMENT_NUM_SUM)
+        predict_comment_count = shops_collection.aggregate([{'$match': {FieldName.DATA_WEBSITE: str(project.data_website), FieldName.DATA_REGION: str(project.data_region), FieldName.DATA_SOURCE: str(project.data_source), FieldName.SHOP_COMMENT_NUM: {"$gt": 0}}}, {'$group': {"_id": "$%s"%FieldName.SHOP_URL, "num": {"$first": "$%s" % FieldName.SHOP_COMMENT_NUM}}}, {'$group': {"_id": None, "sum": {"$sum": "$num"}}}]).next().get('sum')
     except Exception:
         predict_comment_count = 0
     curr_date = time.strftime('%Y-%m-%d', time.localtime(time.time()))

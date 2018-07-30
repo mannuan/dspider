@@ -266,7 +266,7 @@ class DianpingShoppingSpider(TravelDriver):
         try:
             self.login()
             # self.get_shop_info_list()
-            self.get_shop_detail()
-            # self.get_shop_comment()
+            # self.get_shop_detail()
+            self.get_shop_comment()
         except Exception:
             self.error_log(e='cookies失效!!!')

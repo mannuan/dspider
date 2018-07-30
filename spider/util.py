@@ -20,7 +20,7 @@ def ProjectStatistics():
     project_statistics_data = '\"<ul>'
     predict_comment_count_sum = 0
     for shop in shops_collection.find():
-        predict_comment_count_sum += shop.get(FieldName.SHOP_COMMENT_NUM)
+        predict_comment_count_sum += (lambda x:x if x else 0)(shop.get(FieldName.SHOP_COMMENT_NUM))
     project_statistics_data += '<li>店铺:%s家</li>' % (shops_collection.count())
     project_statistics_data += '<li>实际评论:%s条</li>'%(comments_collection.count())
     project_statistics_data += '<li>预计评论:%s条</li>' % (predict_comment_count_sum)

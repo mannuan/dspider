@@ -191,9 +191,9 @@ class DianpingFoodSpider(TravelDriver):
                                   host='10.1.17.15').get_collection()
         shop_name_url_list = list()
         for i in shop_collcetion.find(self.get_data_key()):
-            if i.get('shop_comment_url'):
+            if i.get('shop_comment_url') in ['http://www.dianping.com/shop/21098532/review_all']:
                 shop_name_url_list.append((i.get('shop_name'),i.get('shop_comment_url')))
-        for i in range(len(shop_name_url_list))[145:]:
+        for i in range(len(shop_name_url_list)):
             self.info_log(data='第%s个,%s'%(i+1, shop_name_url_list[i][0]))
             while (True):
                 self.is_ready_by_proxy_ip()
