@@ -14,6 +14,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 from spider.driver.base.logger import get_logger
 from .page import Page,PageFunc,NextPageCssSelectorSetup, NextPageLinkTextSetup
+from .listcssselector import ListCssSelector
 from .field import Field,FieldName,FieldType,Fieldlist
 from .mongodb import Mongodb
 import re
@@ -108,11 +109,15 @@ class Driver(object):
             options.add_argument('--load-images=false')#不加载图片
             # 1允许所有图片；2阻止所有图片；3阻止第三方服务器图片
             prefs = {
-                'profile.default_content_setting_values': {
-                    'images': 2
-                }
+                'profile.default_content_setting.images': 2,
             }
             options.add_experimental_option('prefs', prefs)
+        prefs = {
+            'profile.default_content_setting.notifications': 2,
+            'profile.default_content_setting.geolocation': 2,
+        }
+        options.add_experimental_option('prefs', prefs)
+        options.add_experimental_option('prefs', prefs)
         options.add_argument('--disk-cache=true')#允许缓存
         options.add_argument('disable-infobars')#隐藏自动化软件测试的提示
         return options
@@ -390,17 +395,18 @@ class Driver(object):
 
     def move_to_element(self, ele=None, xoffset=0, yoffset=0):
         """
-        Deprecated scroll_element_to_center
+        Deprecated scroll_element_to_center but if you are in mobile, the method is encouraged
+        这个方法由于在移动端使用到，所以被保留
         :param ele:WebElement
         :param xoffset:
         :param yoffset:
         :return:
         """
-        warnings.warn("use scroll_element_to_center instead", DeprecationWarning)
+        # warnings.warn("use scroll_element_to_center instead while you are in desktop", DeprecationWarning)
         if not ele:
             self.error_log(e='ele不可以为空')
             return None
-        ActionChains(self.driver).move_to_element(ele).move_by_offset(xoffset=xoffset,yoffset=yoffset).perform()
+        ActionChains(self.driver).move_to_element(ele).move_by_offset(xoffset=xoffset, yoffset=yoffset).perform()
 
     def until_scroll_to_center_click_by_css_selector(self, css_selector:str, ele=None, timeout=10):
         """
@@ -2071,8 +2077,25 @@ class Driver(object):
         elif field.fieldtype == FieldType.FLOAT:
             return self.get_float_field_by_css_selector(ele=ele,field=field)
 
+    def get_absolute_item_css_selector(self, listcssselector: ListCssSelector, index:int):
+        """
+        index从0开始计数，但是listcssselector里面的序号是从1开始计数
+        根据页面列表的css_selector，获得一个绝对路径的css_selector
+        :param index:每一个item在列表里面的编号，index必须从0开始
+        :return:
+        """
+        # 注意这里拼接出完整的css selector 是为了防止元素过期, item_css_selector必须放在css_selector的最后面, 也就是元素的编号放在item_css_selector的前面
+        if listcssselector.item_css_selector:
+            item_css_selector = '%s:nth-child(%s) > %s' % (
+            listcssselector.list_css_selector, index+1, listcssselector.item_css_selector)
+        else:
+            item_css_selector = '%s:nth-child(%s)' % (listcssselector.list_css_selector, index+1)
+        return item_css_selector
+
+
     def from_page_get_data_list(self, page:Page):
         """
+        item_css_selector的作用就是加快爬虫查找元素的速度
         从页面爬取一个数据列表
         :param page:爬虫页面
         :return:
@@ -2092,10 +2115,22 @@ class Driver(object):
                 sys.exit(1)
             item_start = (lambda x:0 if x == 0 else x-1)(page.listcssselector.item_start)
             item_end = (lambda x: len(elements_list) if x == 0 else x)(page.listcssselector.item_end)
-            elements_list = elements_list[item_start:item_end]
+            if not self.ismobile:  # 如果这是在网页端则支持列表截取，在移动端item_start的作用不是这样的，它作为页面滚动开始标志
+                elements_list = elements_list[item_start:item_end]
             for each in elements_list:
                 try:
-                    self.scroll_to_center(ele=each)#把每一个item移动到页面中间
+                    if not self.ismobile:  # 如果是网页端
+                        try:
+                            self.scroll_to_center(ele=each)  # 把每一个item移动到页面中间
+                        except Exception:
+                            self.warning_log(e='在网页端，这个item无法滚动到页面中间， 所以不是要找的,丢弃...')
+                            continue
+                    else:
+                        try:
+                            self.move_to_element(ele=each, xoffset=page.xoffset, yoffset=page.yoffset)  # 把每一个item移动到页面， 但是不保证在页面中间， 有可能被遮挡
+                        except Exception:
+                            self.warning_log(e='在移动端，这个item无法拖动到可见的区域， 所以不是要找的,丢弃...')
+                            continue
                     item = each
                     if page.listcssselector.item_css_selector:#如果不为空
                         item = self.until_presence_of_element_located_by_css_selector(ele=each,css_selector=page.listcssselector.item_css_selector)
@@ -2109,7 +2144,28 @@ class Driver(object):
                                 self.save_data_to_mongodb(fieldlist=page.fieldlist, mongodb=page.mongodb, data=data)
                         data_list.append(data)
                 except Exception:
-                    self.error_log(name=page.name,e='item出错!!!')
+                    self.error_log(name=page.name, e='item出错!!!')
+            if self.ismobile:  # 如果是移动端，就会继续判断页面是否有下一个item
+                i = page.listcssselector.item_start
+                while(True):
+                    item_css_selector = self.get_absolute_item_css_selector(page.listcssselector, i)
+                    self.info_log(data='item_css_selector:%s' % item_css_selector)
+                    try:
+                        self.until_move_to_element_by_css_selector(css_selector=item_css_selector)
+                    except Exception:
+                        self.warning_log(e='经过不停地移动， 移动端页面没有更多了!!!')
+                        break
+                    item = self.until_presence_of_element_located_by_css_selector(item_css_selector)
+                    data = self.from_fieldlist_get_data(page=page, ele=item)
+                    if data:#如果因为关键字段数据不为空,则数据不为空
+                        if page.is_save:
+                            if page.mongodb == None:
+                                self.error_log(e='无法确定数据保存位置!!!')
+                                raise ValueError
+                            else:
+                                self.save_data_to_mongodb(fieldlist=page.fieldlist, mongodb=page.mongodb, data=data)
+                        data_list.append(data)
+                    i += 1
         except Exception as e:
             self.error_log(e='列表页面找不到需要抓取的元素!!!')
             #由于列表页面必定是一个不断点击下一页的
@@ -2167,11 +2223,7 @@ class Driver(object):
         data_index_list = range(item_start,item_end)#数据索引列表
         for i in data_index_list:
             if page.tabsetup.click_css_selector:
-                #注意这里拼接出完整的css selector 是为了防止元素过期
-                if pre_page.listcssselector.item_css_selector:
-                    item_css_selector = '%s:nth-child(%s) > %s'%(pre_page.listcssselector.list_css_selector, i+1, pre_page.listcssselector.item_css_selector)
-                else:
-                    item_css_selector = '%s:nth-child(%s)' % (pre_page.listcssselector.list_css_selector, i+1)
+                item_css_selector = self.get_absolute_item_css_selector(pre_page.listcssselector, i)
                 self.debug_log(name='item_css_selector',data=item_css_selector)
                 ele = self.until_presence_of_element_located_by_css_selector(css_selector=item_css_selector)
                 add_data = self.run_click_tab_task(ele=ele, try_times=page.tabsetup.try_times, pause_time=page.tabsetup.pause_time, click_css_selector=page.tabsetup.click_css_selector, is_close_curr_window=not extra_pagefunc.func, pre_pagefunc=pre_pagefunc, main_pagefunc=PageFunc(func=self.from_fieldlist_get_data, page=page), after_pagefunc=after_pagefunc)
@@ -2234,6 +2286,7 @@ class Driver(object):
                         self.close_curr_page()
                 if page.is_save:
                     if len(merge_data_list[0][0]) == len(fieldlist_merge):
+                        self.debug_log(data='保存数据成功!!')
                         self.save_data_list_to_mongodb(fieldlist=fieldlist_merge, mongodb=page.mongodb, datalist=merge_data_list)#注意关键字段必定出现在前面一页
                     else:
                         self.warning_log(e='field的fieldname的命名可能出现了重复,请检查!!!')

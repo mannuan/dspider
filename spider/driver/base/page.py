@@ -5,7 +5,7 @@ from .listcssselector import ListCssSelector
 from .mongodb import Mongodb
 
 class Page(object):
-    def __init__(self, name='', fieldlist=Fieldlist(), is_save=False, mongodb=Mongodb(), listcssselector=ListCssSelector(), tabsetup=TabSetup()):
+    def __init__(self, name='', fieldlist=Fieldlist(), is_save=False, mongodb=Mongodb(), listcssselector=ListCssSelector(), tabsetup=TabSetup(), xoffset=0, yoffset=0):
         """
 
         :param name:
@@ -14,6 +14,8 @@ class Page(object):
         :param mongodb:
         :param listcssselector:
         :param tabsetup:
+        :param xoffset:这个参数在移动端页面的时候使用，在调用driver.move_to_element方法的时候使用
+        :param yoffset:和上面xoffset的作用一样
         """
         self.name = name
         self.fieldlist = fieldlist
@@ -21,6 +23,8 @@ class Page(object):
         self.mongodb = mongodb
         self.listcssselector = listcssselector
         self.tabsetup = tabsetup
+        self.xoffset = xoffset
+        self.yoffset = yoffset
 
     def __str__(self):
         if not self.name or self.fieldlist == None:
@@ -35,6 +39,8 @@ class Page(object):
                 result.setdefault('listcssselector',str(self.listcssselector))
             if self.tabsetup != None:
                 result.setdefault('tabsetup',str(self.tabsetup))
+            result.setdefault('xoffset', self.xoffset)
+            result.setdefault('yoffset', self.yoffset)
             return str(result).replace('\\','')
 
     def __eq__(self, other):

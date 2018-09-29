@@ -89,6 +89,14 @@ if __name__ == '__main__':
                                     data_region=sys.argv[3],
                                     data_source=sys.argv[4])
         spider.run_spider()
+    elif sys.argv[2] + sys.argv[4] == TravelSpiderName.FLIGGY_SPOT:
+        from spider.driver.travel.fliggyspotspider import FliggySpotSpider
+        spider = FliggySpotSpider(isheadless=False, ismobile=True, isvirtualdisplay=False,
+                                   spider_id=sys.argv[1],
+                                   data_website=sys.argv[2],
+                                   data_region=sys.argv[3],
+                                   data_source=sys.argv[4])
+        spider.run_spider()
     elif sys.argv[2]+sys.argv[4] == TravelSpiderName.TUNIU_HOTEL:
         from spider.driver.travel.tuniuhotelspider import TuniuHotelSpider
         spider = TuniuHotelSpider(isheadless=False,ismobile=False,isvirtualdisplay=False,

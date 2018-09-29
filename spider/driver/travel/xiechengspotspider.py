@@ -143,7 +143,7 @@ fl_shop2 = Fieldlist(
     Field(fieldname=FieldName.SHOP_INFO, css_selector='div.main-bd > div.main-wrapper > div.clearfix > div.detail-left', attr='innerHTML', filter_func=get_shop_info, is_focus=True),
 )
 
-page_shop_1 = Page(name='携程景点店铺列表页面', fieldlist=fl_shop1, listcssselector=ListCssSelector(list_css_selector='#searchResultContainer > div', item_css_selector='div'), mongodb=Mongodb(db=TravelDriver.db, collection=TravelDriver.shop_collection))
+page_shop_1 = Page(name='携程景点店铺列表页面', fieldlist=fl_shop1, listcssselector=ListCssSelector(list_css_selector='#searchResultContainer > div', item_css_selector='div'), mongodb=Mongodb(db=TravelDriver.db, collection=TravelDriver.shop_collection), is_save=True)
 
 page_shop_2 = Page(name='携程景点店铺详情页面', fieldlist=fl_shop2, tabsetup=TabSetup(click_css_selector='div.search_ticket_title > h2 > a'), mongodb=Mongodb(db=TravelDriver.db,collection=TravelDriver.shop_collection), is_save=True)
 
@@ -176,9 +176,9 @@ class XiechengSpotSpider(TravelDriver):
     def get_shop_info(self):
         try:
             shop_data_list = self.from_page_get_data_list(page=page_shop_1)
-            nextpagesetup = NextPageCssSelectorSetup(css_selector='div.detail-left > div.content-wrapper.clearfix > ul.pkg_page > a.down', stop_css_selector='div.detail-left > div.content-wrapper.clearfix > ul.pkg_page > a.down.disabled.nocurrent', page=page_comment_1, pause_time=2)
-            extra_pagefunc = PageFunc(func=self.get_newest_comment_data_by_css_selector, nextpagesetup=nextpagesetup)
-            self.from_page_add_data_to_data_list(page=page_shop_2, pre_page=page_shop_1, data_list=shop_data_list, pre_pagefunc = PageFunc(func=self.shop_detail_page_unfold), extra_pagefunc = extra_pagefunc)
+            # nextpagesetup = NextPageCssSelectorSetup(css_selector='div.detail-left > div.content-wrapper.clearfix > ul.pkg_page > a.down', stop_css_selector='div.detail-left > div.content-wrapper.clearfix > ul.pkg_page > a.down.disabled.nocurrent', page=page_comment_1, pause_time=2)
+            # extra_pagefunc = PageFunc(func=self.get_newest_comment_data_by_css_selector, nextpagesetup=nextpagesetup)
+            self.from_page_add_data_to_data_list(page=page_shop_2, pre_page=page_shop_1, data_list=shop_data_list, pre_pagefunc = PageFunc(func=self.shop_detail_page_unfold))
         except Exception as e:
             self.error_log(e=str(e))
 
