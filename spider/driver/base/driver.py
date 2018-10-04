@@ -88,6 +88,7 @@ class Driver(object):
 
     def get_options(self):
         options = webdriver.ChromeOptions()
+        prefs = {}
         if self.ismobile:
             options.add_argument(
                 'user-agent=%s'%self.mobile_user_agent)
@@ -106,20 +107,13 @@ class Driver(object):
             options.add_argument('--headless')
         if not self.isloadimages:
             self.logger.debug('load images is false')
-            options.add_argument('--load-images=false')#不加载图片
             # 1允许所有图片；2阻止所有图片；3阻止第三方服务器图片
-            prefs = {
-                'profile.default_content_setting.images': 2,
-            }
-            options.add_experimental_option('prefs', prefs)
-        prefs = {
-            'profile.default_content_setting.notifications': 2,
-            'profile.default_content_setting.geolocation': 2,
-        }
-        options.add_experimental_option('prefs', prefs)
-        options.add_experimental_option('prefs', prefs)
+            prefs.setdefault('profile.default_content_setting.images', 2)
+        prefs.setdefault('profile.default_content_setting.notifications', 2)
+        prefs.setdefault('profile.default_content_setting.geolocation', 2)
         options.add_argument('--disk-cache=true')#允许缓存
         options.add_argument('disable-infobars')#隐藏自动化软件测试的提示
+        options.add_experimental_option('prefs', prefs)
         return options
 
     def get_driver(self):

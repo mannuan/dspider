@@ -36,9 +36,10 @@ class FliggySpotSpider(TravelDriver):
 
     def get_comment_info_list(self):
         self.fast_get_page(url='https://market.m.taobao.com/apps/market/travelticket/detail.html?wh_weex=true&scenicId=1305&gsCallback=1305')
-        time.sleep(2)
-        self.until_presence_of_element_located_by_css_selector(css_selector='body > div > div.rax-scrollview > div > div:nth-child(1) > div > div:nth-child(3) > div:nth-child(2)').click()
+        comment_url = self.until_presence_of_element_located_by_css_selector(css_selector="body > div > div.rax-scrollview > div > div:nth-child(1) > div > div:nth-child(3) > div:nth-child(2)").get_attribute("href")
+        print(comment_url)
         time.sleep(100)
+
         # comment_data_list = self.from_page_get_data_list(page=page_comment_1)
 
     def run_spider(self):
